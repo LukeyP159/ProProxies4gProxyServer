@@ -307,6 +307,51 @@ const root = createRoot(container!);
 root.render(<App />);
 EOF
             
+            # Create drizzle config file
+            cat > drizzle.config.json << 'EOF'
+{
+  "dialect": "postgresql",
+  "schema": "./shared/schema.ts",
+  "out": "./drizzle",
+  "driver": "pg"
+}
+EOF
+
+            # Create basic shared schema file
+            cat > shared/schema.ts << 'EOF'
+import { pgTable, serial, text, timestamp, boolean, integer } from 'drizzle-orm/pg-core';
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  username: text('username').notNull().unique(),
+  email: text('email').notNull().unique(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const modems = pgTable('modems', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  imei: text('imei').notNull().unique(),
+  status: text('status').notNull().default('offline'),
+  localIp: text('local_ip'),
+  publicIp: text('public_ip'),
+  signalStrength: integer('signal_strength'),
+  downloadSpeed: integer('download_speed'),
+  uploadSpeed: integer('upload_speed'),
+  provider: text('provider'),
+  connectionType: text('connection_type'),
+  lastSeen: timestamp('last_seen'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+export type Modem = typeof modems.$inferSelect;
+export type InsertModem = typeof modems.$inferInsert;
+EOF
+            
             log "Basic project structure created. Installing dependencies..."
         fi
     fi

@@ -28,7 +28,7 @@ A comprehensive 4G proxy server solution with advanced network management capabi
 
 ```bash
 # Clone and deploy in one command
-curl -fsSL https://raw.githubusercontent.com/LukeyP159/ProProxies4gProxyServer/main/deploy.sh | bash
+curl -fsSL https://raw.githubusercontent.com/LukeyP159/ProProxies4gProxyServer/main/deploy-fixed.sh | bash
 ```
 
 ### Option 2: Manual Installation

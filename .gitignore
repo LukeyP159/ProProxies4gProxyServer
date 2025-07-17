@@ -1,0 +1,35 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+.env
+.env.local
+.env.production
+.env.development
+*.log
+logs
+Thumbs.db
+coverage
+.nyc_output
+.vscode
+.idea
+
+# Production files
+cookies.txt
+original_interface.html
+
+# Database
+*.db
+*.sqlite
+
+# SSL certificates
+ssl/
+*.pem
+*.key
+*.crt
+
+# Backup files
+*.bak
+*.backup
