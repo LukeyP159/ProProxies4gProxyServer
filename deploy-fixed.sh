@@ -5,6 +5,9 @@
 
 set -e
 
+# Set non-interactive mode for all apt operations
+export DEBIAN_FRONTEND=noninteractive
+
 # Colors for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
