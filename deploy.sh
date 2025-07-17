@@ -43,11 +43,12 @@ fi
 # GitHub repository URL
 REPO_URL="https://github.com/LukeyP159/ProProxies4gProxyServer.git"
 
-# Get server domain/IP
-read -p "Enter your server domain or IP address: " SERVER_DOMAIN
-if [ -z "$SERVER_DOMAIN" ]; then
-    warn "No domain provided, using localhost"
-    SERVER_DOMAIN="localhost"
+# Auto-detect server IP or use localhost
+SERVER_DOMAIN=$(curl -s ifconfig.me 2>/dev/null || echo "localhost")
+if [ "$SERVER_DOMAIN" = "localhost" ]; then
+    warn "Could not detect public IP, using localhost"
+else
+    log "Detected server IP: $SERVER_DOMAIN"
 fi
 
 log "Starting 4G Proxy Server deployment..."
