@@ -43,14 +43,7 @@ chmod +x install.sh
 sudo ./install.sh
 ```
 
-### Option 3: Docker Deployment
 
-```bash
-# Clone and run with Docker
-git clone https://github.com/LukeyP159/ProProxies4gProxyServer.git
-cd ProProxies4gProxyServer
-docker-compose up -d
-```
 
 ## System Requirements
 
