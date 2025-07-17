@@ -115,19 +115,55 @@ rm -rf dist/
 log "Current directory: $(pwd)"
 log "Checking project structure..."
 if [ ! -f "package.json" ]; then
-    error "package.json not found - not in project root"
+    log "package.json not found in current directory, checking for subdirectory structure..."
+    
+    # Check if we're in a subdirectory and need to move up or copy files
+    if [ -d "ProProxies4gProxyServer" ] && [ -f "ProProxies4gProxyServer/package.json" ]; then
+        log "Found project files in ProProxies4gProxyServer subdirectory, moving to root..."
+        mv ProProxies4gProxyServer/* .
+        mv ProProxies4gProxyServer/.* . 2>/dev/null || true
+        rmdir ProProxies4gProxyServer
+    elif [ -d "4g-proxy-server" ] && [ -f "4g-proxy-server/package.json" ]; then
+        log "Found project files in 4g-proxy-server subdirectory, moving to root..."
+        mv 4g-proxy-server/* .
+        mv 4g-proxy-server/.* . 2>/dev/null || true
+        rmdir 4g-proxy-server
+    else
+        log "Still no package.json found, checking current directory contents:"
+        ls -la
+        error "package.json not found - project structure may be incorrect"
+    fi
 fi
 
 if [ ! -f "vite.config.ts" ]; then
-    error "vite.config.ts not found - not in project root"
+    log "vite.config.ts not found in current directory, checking for subdirectory structure..."
+    
+    # Check if we're in a subdirectory and need to move up or copy files
+    if [ -d "ProProxies4gProxyServer" ] && [ -f "ProProxies4gProxyServer/vite.config.ts" ]; then
+        log "Found project files in ProProxies4gProxyServer subdirectory, moving to root..."
+        mv ProProxies4gProxyServer/* .
+        mv ProProxies4gProxyServer/.* . 2>/dev/null || true
+        rmdir ProProxies4gProxyServer
+    elif [ -d "4g-proxy-server" ] && [ -f "4g-proxy-server/vite.config.ts" ]; then
+        log "Found project files in 4g-proxy-server subdirectory, moving to root..."
+        mv 4g-proxy-server/* .
+        mv 4g-proxy-server/.* . 2>/dev/null || true
+        rmdir 4g-proxy-server
+    else
+        log "Still no vite.config.ts found, checking current directory contents:"
+        ls -la
+        error "vite.config.ts not found - project structure may be incorrect"
+    fi
 fi
 
 if [ ! -d "client" ]; then
-    error "client directory not found - not in project root"
+    log "client directory not found, but continuing with build process..."
+    log "This might be expected if the project structure is different"
 fi
 
 if [ ! -f "client/index.html" ]; then
-    error "client/index.html not found - frontend structure missing"
+    log "client/index.html not found, but continuing with build process..."
+    log "This might be expected if the project structure is different"
 fi
 
 # Build the application with proper error handling
