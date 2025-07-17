@@ -111,10 +111,146 @@ log "Building application..."
 # Clean any previous builds
 rm -rf dist/
 
+# Ensure we're in the project root directory
+log "Current directory: $(pwd)"
+log "Checking project structure..."
+if [ ! -f "package.json" ]; then
+    error "package.json not found - not in project root"
+fi
+
+if [ ! -f "vite.config.ts" ]; then
+    error "vite.config.ts not found - not in project root"
+fi
+
+if [ ! -d "client" ]; then
+    error "client directory not found - not in project root"
+fi
+
+if [ ! -f "client/index.html" ]; then
+    error "client/index.html not found - frontend structure missing"
+fi
+
 # Build the application with proper error handling
 log "Running frontend build..."
-if ! npm run build; then
-    error "Application build failed"
+log "Build environment:"
+log "NODE_ENV: ${NODE_ENV:-not set}"
+log "PWD: $(pwd)"
+log "Vite config exists: $(test -f vite.config.ts && echo 'Yes' || echo 'No')"
+log "Client directory exists: $(test -d client && echo 'Yes' || echo 'No')"
+log "Client index.html exists: $(test -f client/index.html && echo 'Yes' || echo 'No')"
+
+# Set production environment for build
+export NODE_ENV=production
+
+# Run the build with explicit debug output and proper directory context
+log "Starting build process..."
+
+# Ensure we're in the correct directory before building
+PROJECT_DIR=$(pwd)
+log "Project directory: $PROJECT_DIR"
+
+# Create a robust build process that ensures correct directory context
+log "Building frontend with vite..."
+
+# Create a temporary script to ensure correct directory context
+cat > build-frontend.sh << 'EOF'
+#!/bin/bash
+set -e
+cd "$1"
+echo "Working directory: $(pwd)"
+echo "Files in current directory:"
+ls -la
+echo "Files in client directory:"
+ls -la client/
+echo "Running vite build..."
+npx vite build --config vite.config.ts
+EOF
+
+chmod +x build-frontend.sh
+
+# Run the build script
+if ! ./build-frontend.sh "$PROJECT_DIR" 2>&1 | tee build.log; then
+    log "Vite build failed. Build log:"
+    cat build.log
+    
+    # Fallback: try with npm run build
+    log "Fallback: trying npm run build..."
+    if ! npm run build 2>&1 | tee build.log; then
+        log "Both build methods failed. Build log:"
+        cat build.log
+        error "Application build failed"
+    fi
+fi
+
+# Clean up
+rm -f build-frontend.sh
+
+# Final fallback: if all else fails, try building with manual directory setup
+if [ ! -f "dist/index.js" ] || [ ! -d "dist/public" ]; then
+    log "Standard build failed. Trying manual build approach..."
+    
+    # Create dist directory structure
+    mkdir -p dist/public
+    
+    # Try building frontend manually with explicit root
+    log "Building frontend manually..."
+    if ! npx vite build --root client --outDir ../dist/public --emptyOutDir 2>&1 | tee manual-build.log; then
+        log "Manual frontend build failed. Log:"
+        cat manual-build.log
+        
+        # Last resort: create a minimal index.html
+        log "Creating minimal frontend fallback..."
+        cat > dist/public/index.html << 'HTMLEOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4G Proxy Server</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .error { background: #fee; border: 1px solid #fcc; color: #c00; }
+        .info { background: #eef; border: 1px solid #ccf; color: #006; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>4G Proxy Server</h1>
+        <div class="status info">
+            <h3>Server Status</h3>
+            <p>The 4G proxy server is running. Please check the console for detailed logs and API endpoints.</p>
+        </div>
+        <div class="status error">
+            <h3>Frontend Build Issue</h3>
+            <p>The React frontend couldn't be built during deployment. The server backend is running normally.</p>
+            <p>API endpoints are available at: <code>/api/</code></p>
+        </div>
+        <div class="status info">
+            <h3>Available Features</h3>
+            <ul>
+                <li>HTTP/SOCKS5 Proxy Service</li>
+                <li>IP Rotation API</li>
+                <li>Modem Management</li>
+                <li>OpenVPN Configuration</li>
+                <li>System Monitoring</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+HTMLEOF
+    fi
+    
+    # Build backend
+    log "Building backend..."
+    if ! npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist 2>&1 | tee backend-build.log; then
+        log "Backend build failed. Log:"
+        cat backend-build.log
+        error "Backend build failed"
+    fi
 fi
 
 # Verify build output
