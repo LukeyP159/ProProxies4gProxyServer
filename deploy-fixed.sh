@@ -73,6 +73,11 @@ npm_version=$(npm --version)
 log "Node.js version: $node_version"
 log "npm version: $npm_version"
 
+# Check if Node.js version is sufficient (v18 or higher)
+if [[ "$node_version" < "v18" ]]; then
+    error "Node.js version $node_version is too old. Minimum required: v18"
+fi
+
 # Step 3: Install and configure PostgreSQL
 log "Configuring PostgreSQL..."
 systemctl start postgresql
@@ -98,10 +103,36 @@ cd $PROJECT_NAME
 
 # Step 5: Install dependencies and build
 log "Installing application dependencies..."
-npm install
+if ! npm install; then
+    error "Failed to install npm dependencies"
+fi
 
 log "Building application..."
-npm run build
+# Clean any previous builds
+rm -rf dist/
+
+# Build the application with proper error handling
+log "Running frontend build..."
+if ! npm run build; then
+    error "Application build failed"
+fi
+
+# Verify build output
+if [ ! -f "dist/index.js" ]; then
+    error "Backend build failed - dist/index.js not found"
+fi
+
+if [ ! -d "dist/public" ]; then
+    error "Frontend build failed - dist/public not found"
+fi
+
+if [ ! -f "dist/public/index.html" ]; then
+    error "Frontend build failed - index.html not found"
+fi
+
+log "Build completed successfully"
+log "Frontend files: $(ls -la dist/public/)"
+log "Backend file: $(ls -la dist/index.js)"
 
 # Step 6: Create environment file
 log "Creating environment configuration..."
