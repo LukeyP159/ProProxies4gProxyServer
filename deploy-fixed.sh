@@ -520,6 +520,12 @@ PGHOST=localhost
 PGPORT=5432
 EOF
 
+# Test database connection
+log "Testing database connection..."
+if ! PGPASSWORD=$DB_PASSWORD psql -h localhost -U $DB_USER -d $DB_NAME -c '\q' 2>/dev/null; then
+    error "Database connection failed. Please check PostgreSQL service and credentials."
+fi
+
 # Step 7: Run database migrations
 log "Running database migrations..."
 npm run db:push
@@ -547,6 +553,15 @@ EOF
 # Step 9: Set permissions and start service
 log "Setting permissions..."
 chown -R www-data:www-data $INSTALL_DIR
+
+# Stop existing service and clean up ports
+log "Stopping existing services and cleaning up port $APP_PORT..."
+systemctl stop $SERVICE_NAME || true
+pkill -f "tsx server/index.ts" || true
+pkill -f "node dist/index.js" || true
+fuser -k $APP_PORT/tcp || true
+sleep 3
+
 systemctl daemon-reload
 systemctl enable $SERVICE_NAME
 systemctl start $SERVICE_NAME
